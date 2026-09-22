@@ -1,36 +1,17 @@
 use rand::seq::SliceRandom;
-use rodio::{Decoder, MixerDeviceSink, Player};
+use rodio::{MixerDeviceSink, Player};
 use std::{
-    env,
     fs::{self, File},
     io::{self, BufReader, Write},
-    ops::ControlFlow::Break,
-    path::{Path, PathBuf},
-    process::Command,
-    sync::{mpsc, Arc, Mutex},
+    path::{self, PathBuf},
+    sync::mpsc,
     thread::{self},
     time::Duration,
 };
 use trash;
 
 fn main() -> io::Result<()> {
-    let path: String;
-    println!("Aperte [Enter] para continuar OU digite qualquer tecla para selecionar o diretorio:");
-    let user_input = get_user_input();
-    if user_input.is_empty() {
-        path = fs::read_to_string("arquivo.txt").unwrap();
-    } else {
-        println!("digite o diretorio");
-
-        let input = get_user_input();
-
-        match fs::write("arquivo.txt", &input) {
-            Ok(_) => println!("Arquivo criado com sucesso!"),
-            Err(e) => println!("Erro ao criar o arquivo: {}", e),
-        }
-        path = input;
-    }
-
+    let path = create_diretorio();
     let mut files = fs::read_dir(path)?
         .map(|res| res.map(|e| e.path()))
         .collect::<Result<Vec<_>, io::Error>>()?;
@@ -169,4 +150,41 @@ fn shuffle_files(mut files: Vec<PathBuf>) -> Vec<PathBuf> {
     let mut rng = rand::thread_rng();
     files.shuffle(&mut rng);
     files
+}
+
+fn create_diretorio() -> String {
+    let mut path: String;
+    let _ = fs::write("arquivo.txt", "");
+    path = fs::read_to_string("arquivo.txt").unwrap();
+    if path.is_empty() {
+        println!("digite o diretorio");
+
+        let input = get_user_input();
+
+        match fs::write("arquivo.txt", &input) {
+            Ok(_) => println!("Arquivo criado com sucesso!"),
+            Err(e) => println!("Erro ao criar o arquivo: {}", e),
+        }
+        path = input;
+    } else {
+        println!(
+            "Aperte [Enter] para continuar DIR:{} OU digite qualquer tecla para alterar o diretorio:", path
+        );
+        let user_input = get_user_input();
+        if user_input.is_empty() {
+            path = fs::read_to_string("arquivo.txt").unwrap();
+        } else {
+            println!("digite o diretorio");
+
+            let input = get_user_input();
+
+            match fs::write("arquivo.txt", &input) {
+                Ok(_) => println!("Arquivo criado com sucesso!"),
+                Err(e) => println!("Erro ao criar o arquivo: {}", e),
+            }
+            path = input;
+        }
+    }
+
+    return path;
 }
